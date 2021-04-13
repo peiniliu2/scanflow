@@ -11,9 +11,9 @@ from pathlib import Path
 
 @click.command(help="Gather an input data set")
 @click.option("--input_path", help="Input raw data set",
-              default='./images', type=str)
-@click.option("--model_name", type=str)
-@click.option("--model_version",  default=1, type=int)
+              default='./mnist_sample/test_images.npy', type=str)
+@click.option("--model_name", default='mnist_cnn', type=str)
+@click.option("--model_version",  default=16, type=int)
 def predictor(input_path, model_name, model_version):
     with mlflow.start_run(run_name='predictor') as mlrun:
 

@@ -1,0 +1,18 @@
+!!python/object:couler.core.templates.workflow.Workflow
+clean_ttl: null
+cluster_config: null
+cron_config: null
+dag_mode: false
+dag_tasks: !!python/object/apply:collections.OrderedDict
+- []
+exit_handler_step: !!python/object/apply:collections.OrderedDict
+- []
+generate_name: runpy
+name: null
+pvcs: []
+steps: !!python/object/apply:collections.OrderedDict
+- []
+templates: {}
+timeout: null
+user_id: null
+volumes: []

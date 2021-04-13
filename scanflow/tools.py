@@ -268,6 +268,7 @@ def dockerfile_template_executor(executor):
                 WORKDIR /app
                 RUN pip install -r {executor['requirements']}
 
+                ENTRYPOINT ["python", "/app/{executor['file']}"]
     ''')
     return template
 
@@ -599,7 +600,55 @@ def build_image(name, dockerfile_dir, dockerfile_path,
         logging.error(f"{e}")
         logging.error(f"[-] Image building failed.", exc_info=True)
 
+def build_image_to_registry(registry, name, dockerfile_dir, dockerfile_path,
+                node_type='executor', port=None, tracker_dir=None):
 
+    image_from_repo = None
+
+    try:
+        image_from_repo = client.images.get(name)
+
+    except docker.api.client.DockerException as e:
+        logging.info(f"[+] Image [{name}] not found in repository. Building a new one.")
+    try:
+
+        if image_from_repo is None:
+            tag = f"{registry}/{name}"
+            image = client.images.build(path=dockerfile_dir,
+                                        dockerfile=dockerfile_path,
+                                        tag=tag)
+            logging.info(f'[+] Image [{name}] was built successfully.')
+            client.images.push(tag)
+            logging.info(f'[+] Image [{name}] was pushed to registry successfully.')
+            if node_type == 'tracker':
+                metadata = {'name': name, 'image': image[0].tags,
+                            'type': node_type, 'status': 0,
+                            'port': port, 'tracker_dir': tracker_dir}  # 0:not running
+            else:
+                metadata = {'name': name, 'image': image[0].tags,
+                            'type': node_type, 'status': 0} # 0:not running
+            return metadata
+
+        else:
+            logging.warning(f'[+] Image [{name}] already exists.')
+            logging.info(f'[+] Image [{name}] was loaded successfully.')
+
+            if node_type == 'tracker':
+                metadata = {'name': name, 'image': image_from_repo.tags,
+                            'type': node_type, 'status': 0,
+                            'port': port, 'url': f'http://localhost:{port}/',
+                            'tracker_dir': tracker_dir}  # 0:not running
+            else:
+                metadata = {'name': name, 'image': image_from_repo.tags,
+                            'type': node_type, 'status': 0} # 0:not running
+
+            return metadata
+
+    except docker.api.client.DockerException as e:
+        logging.error(f"{e}")
+        logging.error(f"[-] Image building failed.", exc_info=True)
+
+ 
 def start_image(image, name, network=None, **kwargs):
 
     container_from_env = None
@@ -770,6 +819,8 @@ def get_scanflow_paths(app_dir):
     improver_dir = os.path.join(ad_stuff_dir, 'improver')
     planner_dir = os.path.join(ad_stuff_dir, 'planner')
 
+    deployer_dir = os.path.join(ad_stuff_dir, 'deployer')
+
     ad_paths = {'app_dir': app_dir,
                 'app_workflow_dir': app_workflow_dir,
                 'ad_stuff_dir': ad_stuff_dir,
@@ -778,6 +829,7 @@ def get_scanflow_paths(app_dir):
                 'ad_checker_dir': ad_checker_dir,
                 'improver_dir': improver_dir,
                 'planner_dir': planner_dir,
+                'deployer_dir': deployer_dir,
                 'ad_checker_pred_dir': ad_checker_pred_dir,
                 'ad_checker_model_dir': ad_checker_model_dir,
                 'ad_checker_scaler_dir': ad_checker_scaler_dir}

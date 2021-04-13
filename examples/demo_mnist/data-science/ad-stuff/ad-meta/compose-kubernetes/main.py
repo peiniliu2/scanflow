@@ -9,19 +9,19 @@ from scanflow.setup import setup
 from scanflow.run import run
 
 # App folder
-app_dir = '/home/guess/Desktop/scanflow/examples/demo_mnist/data-science/'
+app_dir = '/gpfs/bsc_home/xpliu/pv/jupyterhubpeini/scanflow/examples/demo_mnist/data-science/'
 
 # Workflows
 workflow1 = [
-    {'name': 'gathering-20210322133206', 'file': 'gathering.py',
+    {'name': 'gathering-20210404191822', 'file': 'gathering.py',
             'env': 'gathering'},
 
-    {'name': 'preprocessing-20210322133206', 'file': 'preprocessing.py',
+    {'name': 'preprocessing-20210404191822', 'file': 'preprocessing.py',
             'env': 'preprocessing'},
 
 ]
 workflow2 = [
-    {'name': 'modeling-20210322133206', 'file': 'modeling.py',
+    {'name': 'modeling-20210404191822', 'file': 'modeling.py',
             'env': 'modeling'},
 
 
