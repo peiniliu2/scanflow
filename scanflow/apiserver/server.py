@@ -2,7 +2,6 @@ import json
 import uvicorn
 import logging
 
-from scanflow.deploy.deploy import Deploy
 from fastapi import FastAPI
 
 logging.basicConfig(format='%(asctime)s -  %(levelname)s - %(message)s',
@@ -27,8 +26,8 @@ async def run_workflow(workflows_metadata_path: str):
         logging.error(f"{e}")
         logging.error(f"[-] Workflows metadata has not yet saved.")
 
-    deployer = Deploy(setup)
-    deployer.run_workflows(verbose=True)
+    #deployer = Deploy(setup)
+    #deployer.run_workflows(verbose=True)
 
 
     # paths = tools.get_scanflow_paths(content['app_dir'])
@@ -38,6 +37,3 @@ async def run_workflow(workflows_metadata_path: str):
     response = ""
 
     return response
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)

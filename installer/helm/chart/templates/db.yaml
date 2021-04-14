@@ -1,0 +1,63 @@
+#mlflow for saving artifacts
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-scanflow-artifacts
+  namespace: {{ .Release.Namespace }}
+spec:
+  storageClassName: local-path
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi 
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-artifacts
+  namespace: {{ .Release.Namespace }} 
+  labels:
+    app: scanflow-artifacts
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scanflow-artifacts
+  template:
+    metadata:
+      labels:
+        app: scanflow-artifacts
+    spec:
+      volumes:
+        - name: pvc-scanflow-artifacts
+          persistentVolumeClaim:
+            claimName: pvc-scanflow-artifacts
+      containers:
+        - image: {{.Values.basic.scanflow_artifacts_image_name}}:{{.Values.basic.image_tag_version}}
+          imagePullPolicy: Always
+          name: {{ .Release.Name }}-artifacts
+          volumeMounts:
+            - mountPath: /mlflow
+              name: pvc-scanflow-artifacts
+      restartPolicy: Always
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-artifacts-service
+  namespace: {{ .Release.Namespace }} 
+spec:
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 8080
+    nodePort: 46667
+  selector:
+    app: scanflow-artifacts
+  type: NodePort

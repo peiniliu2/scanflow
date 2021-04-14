@@ -16,3 +16,8 @@ oyaml==0.9
 plotly==4.5.1
 fastapi==0.63.0
 uvicorn==0.12.3
+
+kubernetes
+pickle
+couler
+seldon-core=1.7.0
