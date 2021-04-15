@@ -25,6 +25,11 @@ $ docker build -f dockerfile/artifacts/Dockerfile -t 172.30.0.49:5000/scanflow-a
 $ docker push 172.30.0.49:5000/scanflow-artifacts
 ```
 
+| Service|cluster host ip|Port|NodePort|
+|----------------|-----------------|----------------|-------------|
+|`Scanflow server`| 172.30.0.50 | 8080 | 46666 |
+|`Scanflow DB`|  172.30.0.50 | 8080 | 46667 |
+
 ## Installing kubernetes via helm charts
 
 To install the scanflow with chart:

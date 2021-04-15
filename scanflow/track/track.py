@@ -33,17 +33,10 @@ class Tracker:
         """
         # self.api_name = api_container_name
         self.app_dir = app_dir
-        self.ad_paths = tools.get_scanflow_paths(app_dir)
+        self.paths = tools.get_scanflow_paths(app_dir)
         self.verbose = verbose
         tools.check_verbosity(verbose)
-        self.workflows = tools.read_workflows(self.ad_paths)
-        # self.ad_stuff_dir = os.path.join(app_dir, 'ad-stuff')
-        # self.ad_meta_dir = os.path.join(self.ad_stuff_dir, 'ad-meta')
-        # self.ad_tracker_dir = os.path.join(self.ad_stuff_dir, 'ad-tracker')
-        # self.ad_checker_dir = os.path.join(self.ad_stuff_dir, 'ad-checker')
-        # self.ad_checker_pred_dir = os.path.join(self.ad_checker_dir, 'predictions')
-        # self.ad_checker_model_dir = os.path.join(self.ad_checker_dir, 'model')
-        # self.ad_checker_scaler_dir = os.path.join(self.ad_checker_dir, 'scaler')
+        self.workflows = tools.read_workflows(self.paths)
 
     def pipeline(self):
         # self.predict()
@@ -97,29 +90,6 @@ class Tracker:
             return tracker_uri
         else:
             return None
-
-    # def get_artifacts(self, workflow_name, experiment_name='Default', artifact_name='input.npy'):
-    #     tracker_port = '8002'
-    #     tracker_uri = f"http://localhost:{tracker_port}"
-    #
-    #     tracker = mlflow.tracking.MlflowClient(tracking_uri=tracker_uri)
-    #
-    #     experiment = tracker.get_experiment_by_name(experiment_name)
-    #     experiment_id = experiment.experiment_id
-    #
-    #     runs_info = tracker.list_run_infos(experiment_id,
-    #                                       order_by=["attribute.start_time DESC"])
-    #     if runs_info:
-    #         last_run_id = runs_info[0]
-    #         tracker_dir = self.get_tracker_dir(workflow_name)
-    #         artifact_path = os.path.join(tracker_dir, last_run_id.artifact_uri[1:], artifact_name)
-    #
-    #         return artifact_path
-    #     else:
-    #         return None
-    #
-    #
-    #     return artifacts
 
     def list_artifacts(self, workflow_name, run_id=None, experiment_name='Default'):
         tracker_port = '8002'

@@ -48,7 +48,7 @@ class BackendSeldon(backend.Backend):
         if workflower is not None:
             self.workflows_user = workflower.workflows_user
             self.app_dir = workflower.app_dir
-            self.ad_paths = tools.get_scanflow_paths(workflower.app_dir)
+            self.paths = tools.get_scanflow_paths(workflower.app_dir)
         else:
             self.workflows_user = None
         tools.check_verbosity(verbose)
@@ -84,18 +84,18 @@ class BackendSeldon(backend.Backend):
 
         self.workflows = list()
 
-        os.makedirs(self.ad_paths['ad_meta_dir'], exist_ok=True)
-        os.makedirs(self.ad_paths['ad_tracker_dir'], exist_ok=True)
-        os.makedirs(self.ad_paths['ad_checker_dir'], exist_ok=True)
-        os.makedirs(self.ad_paths['improver_dir'], exist_ok=True)
-        os.makedirs(self.ad_paths['planner_dir'], exist_ok=True)
-        # os.makedirs(self.ad_paths['ad_checker_pred_dir'], exist_ok=True)
-        # os.makedirs(self.ad_paths['ad_checker_model_dir'], exist_ok=True)
-        # os.makedirs(self.ad_paths['ad_checker_scaler_dir'], exist_ok=True)
+        os.makedirs(self.paths['meta_dir'], exist_ok=True)
+        os.makedirs(self.paths['tracker_dir'], exist_ok=True)
+        os.makedirs(self.paths['checker_dir'], exist_ok=True)
+        os.makedirs(self.paths['improver_dir'], exist_ok=True)
+        os.makedirs(self.paths['planner_dir'], exist_ok=True)
+        # os.makedirs(self.paths['ad_checker_pred_dir'], exist_ok=True)
+        # os.makedirs(self.paths['ad_checker_model_dir'], exist_ok=True)
+        # os.makedirs(self.paths['ad_checker_scaler_dir'], exist_ok=True)
 
         compose_types = ['repository', 'verbose', 'swarm', 'kubernetes']
         for c_type in compose_types:
-            compose_path = tools.generate_compose(self.ad_paths,
+            compose_path = tools.generate_compose(self.paths,
                                                   self.workflows_user,
                                                   compose_type=c_type)
 
@@ -111,7 +111,7 @@ class BackendSeldon(backend.Backend):
 
             self.workflows.append(workflow)
 
-        tools.save_workflows(self.ad_paths, self.workflows)
+        tools.save_workflows(self.paths, self.workflows)
 
     def __build_workflow(self, workflow: dict):
         """
@@ -139,13 +139,13 @@ class BackendSeldon(backend.Backend):
             env_image_name = f"{wflow['name']}"
 
             # Save each python file to compose-verbose folder
-            meta_compose_dir = os.path.join(self.ad_paths['ad_meta_dir'], 'compose-verbose')
+            meta_compose_dir = os.path.join(self.paths['meta_dir'], 'compose-verbose')
             source = os.path.join(self.app_dir, 'workflow', wflow['file'])
             copy2(source, meta_compose_dir)
 
             # Create Dockerfile if needed
             if 'requirements' in wflow.keys():
-                meta_compose_dir = os.path.join(self.ad_paths['ad_meta_dir'], 'compose-verbose')
+                meta_compose_dir = os.path.join(self.paths['meta_dir'], 'compose-verbose')
                 # dockerfile_dir = os.path.join(self.app_dir, 'workflow') #context
                 # os.makedirs(meta_compose_dir, exist_ok=True)
 
@@ -161,7 +161,7 @@ class BackendSeldon(backend.Backend):
                 environments.append(metadata)
 
             elif 'dockerfile' in wflow.keys():
-                meta_compose_dir = os.path.join(self.ad_paths['ad_meta_dir'], 'compose-verbose')
+                meta_compose_dir = os.path.join(self.paths['meta_dir'], 'compose-verbose')
                 # os.makedirs(meta_compose_dir, exist_ok=True)
 
                 dockerfile_dir = os.path.join(self.app_dir, 'workflow') #context
@@ -190,7 +190,7 @@ class BackendSeldon(backend.Backend):
 
         if 'tracker' in workflow.keys():
             port = workflow['tracker']['port']
-            meta_compose_dir = os.path.join(self.ad_paths['ad_meta_dir'], 'compose-verbose')
+            meta_compose_dir = os.path.join(self.paths['meta_dir'], 'compose-verbose')
             # os.makedirs(meta_compose_dir, exist_ok=True)
             # dockerfile_dir = os.path.join(self.app_dir, 'workflow') #context
             dockerfile_path = tools.generate_dockerfile(folder=meta_compose_dir,
@@ -200,7 +200,7 @@ class BackendSeldon(backend.Backend):
 
 
             tracker_image_name = f"tracker-{workflow['name']}"
-            tracker_dir = os.path.join(self.ad_paths['ad_tracker_dir'], tracker_image_name )
+            tracker_dir = os.path.join(self.paths['tracker_dir'], tracker_image_name )
             metadata = tools.build_image(tracker_image_name, meta_compose_dir,
                                          dockerfile_path, 'tracker', port, tracker_dir)
             # metadata = tools.build_image(tracker_image_name, self.app_dir,
@@ -215,7 +215,7 @@ class BackendSeldon(backend.Backend):
                                                                   port=port_agent)
 
                 tracker_agent_image_name = f"tracker-agent-{workflow['name']}"
-                tracker_dir = os.path.join(self.ad_paths['ad_tracker_dir'], tracker_image_name )
+                tracker_dir = os.path.join(self.paths['tracker_dir'], tracker_image_name )
                 metadata = tools.build_image(tracker_agent_image_name, meta_compose_dir,
                                              dockerfile_agent_path, 'tracker-agent', port_agent, tracker_dir)
 
@@ -223,7 +223,7 @@ class BackendSeldon(backend.Backend):
 
             if 'checker' in workflow.keys():
                 port = workflow['checker']['port']
-                meta_compose_dir = os.path.join(self.ad_paths['ad_meta_dir'], 'compose-verbose')
+                meta_compose_dir = os.path.join(self.paths['meta_dir'], 'compose-verbose')
                 # os.makedirs(meta_compose_dir, exist_ok=True)
                 # dockerfile_dir = os.path.join(self.app_dir, 'workflow') #context
                 dockerfile_path = tools.generate_dockerfile(folder=meta_compose_dir,
@@ -233,7 +233,7 @@ class BackendSeldon(backend.Backend):
 
 
                 checker_image_name = f"checker-{workflow['name']}"
-                checker_dir = os.path.join(self.ad_paths['ad_checker_dir'], checker_image_name )
+                checker_dir = os.path.join(self.paths['checker_dir'], checker_image_name )
                 metadata = tools.build_image(checker_image_name, meta_compose_dir,
                                              dockerfile_path, 'checker', port, checker_dir)
                 # metadata = tools.build_image(tracker_image_name, self.app_dir,
@@ -248,14 +248,14 @@ class BackendSeldon(backend.Backend):
                                                                       port=port_agent)
 
                     checker_agent_image_name = f"checker-agent-{workflow['name']}"
-                    checker_dir = os.path.join(self.ad_paths['ad_checker_dir'], checker_agent_image_name )
+                    checker_dir = os.path.join(self.paths['checker_dir'], checker_agent_image_name )
                     metadata = tools.build_image(checker_agent_image_name, meta_compose_dir,
                                                  dockerfile_agent_path, 'checker-agent', port_agent, checker_dir)
 
                     environments.append(metadata)
 
             if 'improver' in workflow.keys():
-                meta_compose_dir = os.path.join(self.ad_paths['ad_meta_dir'], 'compose-verbose')
+                meta_compose_dir = os.path.join(self.paths['meta_dir'], 'compose-verbose')
 
                 if workflow['improver']['mode'] == 'online':
                     port_agent = workflow['improver']['port']
@@ -265,7 +265,7 @@ class BackendSeldon(backend.Backend):
                                                                       port=port_agent)
 
                     improver_agent_image_name = f"improver-agent-{workflow['name']}"
-                    improver_dir = os.path.join(self.ad_paths['improver_dir'], improver_agent_image_name )
+                    improver_dir = os.path.join(self.paths['improver_dir'], improver_agent_image_name )
                     metadata = tools.build_image(improver_agent_image_name, meta_compose_dir,
                                                  dockerfile_agent_path, 'improver-agent', port_agent, improver_dir)
 
@@ -274,7 +274,7 @@ class BackendSeldon(backend.Backend):
                     raise ValueError('Improver can be only deployed in online mode. Please set mode=online.')
 
             if 'planner' in workflow.keys():
-                meta_compose_dir = os.path.join(self.ad_paths['ad_meta_dir'], 'compose-verbose')
+                meta_compose_dir = os.path.join(self.paths['meta_dir'], 'compose-verbose')
 
                 if workflow['planner']['mode'] == 'online':
                     port_agent = workflow['planner']['port']
@@ -284,7 +284,7 @@ class BackendSeldon(backend.Backend):
                                                                       port=port_agent)
 
                     planner_agent_image_name = f"planner-agent-{workflow['name']}"
-                    planner_dir = os.path.join(self.ad_paths['planner_dir'], planner_agent_image_name )
+                    planner_dir = os.path.join(self.paths['planner_dir'], planner_agent_image_name )
                     metadata = tools.build_image(planner_agent_image_name, meta_compose_dir,
                                                  dockerfile_agent_path, 'planner-agent', port_agent, planner_dir)
 
@@ -356,7 +356,7 @@ class BackendSeldon(backend.Backend):
                 host_path = self.app_dir
                 container_path = '/app'
 
-                workflow_tracker_dir_host = os.path.join(self.ad_paths['ad_tracker_dir'], f"tracker-{workflow['name']}" )
+                workflow_tracker_dir_host = os.path.join(self.paths['tracker_dir'], f"tracker-{workflow['name']}" )
 
                 workflow_tracker_dir_ctn = '/mlflow'
 
@@ -408,7 +408,7 @@ class BackendSeldon(backend.Backend):
         if 'tracker' in workflow.keys():
             list_containers = []
 
-            workflow_tracker_dir = os.path.join(self.ad_paths['ad_tracker_dir'], f"tracker-{workflow['name']}" )
+            workflow_tracker_dir = os.path.join(self.paths['tracker_dir'], f"tracker-{workflow['name']}" )
             os.makedirs(workflow_tracker_dir, exist_ok=True)
 
             # host_path = self.app_dir
@@ -468,13 +468,13 @@ class BackendSeldon(backend.Backend):
 
             if 'checker' in workflow.keys():
                 kwargs = dict()
-                workflow_checker_dir = self.ad_paths['ad_checker_dir']
+                workflow_checker_dir = self.paths['checker_dir']
                 host_path = workflow_checker_dir
-                # host_path = os.path.join(self.ad_paths['ad_checker_dir'], f"checker-{workflow['name']}" )
+                # host_path = os.path.join(self.paths['checker_dir'], f"checker-{workflow['name']}" )
                 os.makedirs(host_path, exist_ok=True)
                 container_path = '/checker'
 
-                workflow_tracker_dir_host = os.path.join(self.ad_paths['ad_tracker_dir'], f"tracker-{workflow['name']}" )
+                workflow_tracker_dir_host = os.path.join(self.paths['tracker_dir'], f"tracker-{workflow['name']}" )
                 workflow_tracker_dir_ctn = '/mlflow'
 
 
@@ -527,13 +527,13 @@ class BackendSeldon(backend.Backend):
 
             if 'improver' in workflow.keys():
                 kwargs = dict()
-                workflow_improver_dir = self.ad_paths['improver_dir']
+                workflow_improver_dir = self.paths['improver_dir']
                 host_path = workflow_improver_dir
-                # host_path = os.path.join(self.ad_paths['ad_improver_dir'], f"improver-{workflow['name']}" )
+                # host_path = os.path.join(self.paths['ad_improver_dir'], f"improver-{workflow['name']}" )
                 os.makedirs(host_path, exist_ok=True)
                 # container_path = '/improver'
 
-                workflow_tracker_dir_host = os.path.join(self.ad_paths['ad_tracker_dir'], f"tracker-{workflow['name']}" )
+                workflow_tracker_dir_host = os.path.join(self.paths['tracker_dir'], f"tracker-{workflow['name']}" )
                 workflow_tracker_dir_ctn = '/mlflow'
 
 
@@ -584,13 +584,13 @@ class BackendSeldon(backend.Backend):
 
             if 'planner' in workflow.keys():
                 kwargs = dict()
-                workflow_planner_dir = self.ad_paths['planner_dir']
+                workflow_planner_dir = self.paths['planner_dir']
                 host_path = workflow_planner_dir
-                # host_path = os.path.join(self.ad_paths['ad_planner_dir'], f"planner-{workflow['name']}" )
+                # host_path = os.path.join(self.paths['ad_planner_dir'], f"planner-{workflow['name']}" )
                 os.makedirs(host_path, exist_ok=True)
                 container_path = '/planner'
 
-                workflow_tracker_dir_host = os.path.join(self.ad_paths['ad_tracker_dir'], f"tracker-{workflow['name']}" )
+                workflow_tracker_dir_host = os.path.join(self.paths['tracker_dir'], f"tracker-{workflow['name']}" )
                 workflow_tracker_dir_ctn = '/mlflow'
 
 
@@ -996,15 +996,15 @@ class BackendSeldon(backend.Backend):
         url = f'http://localhost:{port}/invocations'
 
         try:
-            input_path = os.path.join(self.ad_paths['app_workflow_dir'], input_name)
+            input_path = os.path.join(self.paths['workflow_dir'], input_name)
             self.input_pred_df = tools.predict(input_path, port)
 
             # id_date = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
             # input_pred_filename = f'input_predictions_{id_date}.csv'
-            # pred_path = os.path.join(self.ad_paths['ad_checker_dir'],
+            # pred_path = os.path.join(self.paths['checker_dir'],
             #                          input_pred_filename)
             # self.input_pred_df.to_csv(pred_path, index=False)
-            # logging.info(f"Input and predictions were saved at: {self.ad_paths['ad_checker_dir']}")
+            # logging.info(f"Input and predictions were saved at: {self.paths['checker_dir']}")
             self.save_predictions(self.input_pred_df)
 
             return self.input_pred_df
@@ -1024,7 +1024,7 @@ class BackendSeldon(backend.Backend):
         """
         id_date = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
         input_pred_filename = f'input_predictions_{id_date}.csv'
-        pred_path = os.path.join(self.ad_paths['ad_checker_pred_dir'],
+        pred_path = os.path.join(self.paths['ad_checker_pred_dir'],
                                  input_pred_filename)
         input_pred_df.to_csv(pred_path, index=False)
         logging.info(f"Input and predictions were saved at: {pred_path}")

@@ -1,7 +1,6 @@
 """
 abstract backend class
 """
-
 from scanflow import tools
 
 class Backend():
@@ -10,19 +9,13 @@ class Backend():
                  verbose=True):
         self.verbose = verbose
         if workflower is not None:
-            self.workflows_user = workflower.workflows_user
+            self.app_name = workflower.app_name
             self.app_dir = workflower.app_dir
-            self.ad_paths = tools.get_scanflow_paths(workflower.app_dir)
+            self.paths = tools.get_scanflow_paths(workflower.app_dir)
+            self.workflows_user = workflower.workflows_user
         else:
             self.workflows_user = None
         tools.check_verbosity(verbose)
-        self.logs_workflow = None
-        self.logs_build_image = None
-        self.logs_run_ctn = None
-        self.api_container_object = None
-        self.predictor_repr = None
-        self.input_pred_df = None
-        self.workflows = list()
 
     
     def build_workflows(self):
@@ -67,3 +60,4 @@ class Backend():
         """
         raise NotImplementedError("Backend:clean env")
 
+    

@@ -2,13 +2,11 @@
 FROM continuumio/miniconda3
 LABEL maintainer='scanflow'
 
-ENV MLFLOW_TRACKING_URI=http://scanflow-artifacts:8080
-
 RUN mkdir /app
 #download scanflow
 
 ENV SCANFLOW_PATH  /app/scanflow
-ENV SERVER_HOME  ${SCANFLOW_PATH}/scanflow/apiserver
+ENV SERVER_HOME  ${SCANFLOW_PATH}/scanflow/server
 
 RUN pip install mlflow==1.14.1
 RUN pip install fastapi

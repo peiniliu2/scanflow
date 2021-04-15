@@ -1,0 +1,79 @@
+#mlflow for saving artifacts
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-scanflow-tracker
+  labels:
+    type: local
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/gpfs/bsc_home/xpliu/pv/scanflow"
+
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-scanflow-tracker
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 2Gi 
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-tracker
+  namespace: {{ .Release.Namespace }} 
+  labels:
+    app: scanflow-tracker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scanflow-tracker
+  template:
+    metadata:
+      labels:
+        app: scanflow-tracker
+    spec:
+      volumes:
+        - name: pvc-scanflow-tracker
+          persistentVolumeClaim:
+            claimName: pvc-scanflow-tracker
+      containers:
+        - image: {{.Values.basic.scanflow_artifacts_image_name}}:{{.Values.basic.image_tag_version}}
+          imagePullPolicy: Always
+          name: {{ .Release.Name }}-tracker
+          volumeMounts:
+            - mountPath: /mlflow
+              name: pvc-scanflow-tracker
+      restartPolicy: Always
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-tracker-service
+  namespace: {{ .Release.Namespace }} 
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 8080
+    nodePort: 46667
+  selector:
+    app: scanflow-tracker
+  type: NodePort

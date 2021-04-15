@@ -60,12 +60,12 @@ class BackendArgo(backend.Backend):
 
         self.workflows = list()
 
-        os.makedirs(self.ad_paths['ad_meta_dir'], exist_ok=True)
-        os.makedirs(self.ad_paths['ad_tracker_dir'], exist_ok=True)
-        os.makedirs(self.ad_paths['ad_checker_dir'], exist_ok=True)
-        os.makedirs(self.ad_paths['improver_dir'], exist_ok=True)
-        os.makedirs(self.ad_paths['planner_dir'], exist_ok=True)
-        os.makedirs(self.ad_paths['deployer_dir'], exist_ok=True)
+        os.makedirs(self.paths['meta_dir'], exist_ok=True)
+        os.makedirs(self.paths['ad_tracker_dir'], exist_ok=True)
+        os.makedirs(self.paths['ad_checker_dir'], exist_ok=True)
+        os.makedirs(self.paths['improver_dir'], exist_ok=True)
+        os.makedirs(self.paths['planner_dir'], exist_ok=True)
+        os.makedirs(self.paths['deployer_dir'], exist_ok=True)
 
 
         for wf_user in self.workflows_user:
@@ -77,7 +77,7 @@ class BackendArgo(backend.Backend):
 
             self.workflows.append(workflow)
 
-        tools.save_workflows(self.ad_paths, self.workflows)
+        tools.save_workflows(self.paths, self.workflows)
 
     def __build_workflow(self, workflow: dict):
         """
@@ -94,13 +94,13 @@ class BackendArgo(backend.Backend):
             env_image_name = f"{wflow['name']}"
 
             # Save each python file to compose-verbose folder
-            meta_compose_dir = os.path.join(self.ad_paths['ad_meta_dir'], 'compose-verbose')
+            meta_compose_dir = os.path.join(self.paths['ad_meta_dir'], 'compose-verbose')
             source = os.path.join(self.app_dir, 'workflow', wflow['file'])
             copy2(source, meta_compose_dir)
 
             # Create Dockerfile if needed and build dockerimages to registry
             if 'requirements' in wflow.keys():
-                meta_compose_dir = os.path.join(self.ad_paths['ad_meta_dir'], 'compose-verbose')
+                meta_compose_dir = os.path.join(self.paths['ad_meta_dir'], 'compose-verbose')
 
                 dockerfile_path = tools.generate_dockerfile(folder=meta_compose_dir,
                                                             executor=wflow,
@@ -112,7 +112,7 @@ class BackendArgo(backend.Backend):
                 environments.append(metadata)
 
             elif 'dockerfile' in wflow.keys():
-                meta_compose_dir = os.path.join(self.ad_paths['ad_meta_dir'], 'compose-verbose')
+                meta_compose_dir = os.path.join(self.paths['ad_meta_dir'], 'compose-verbose')
 
                 dockerfile_dir = os.path.join(self.app_dir, 'workflow') #context
                 dockerfile_path = os.path.join(dockerfile_dir, wflow['dockerfile'])
@@ -124,7 +124,7 @@ class BackendArgo(backend.Backend):
 
         if 'tracker' in workflow.keys():
             port = workflow['tracker']['port']
-            meta_compose_dir = os.path.join(self.ad_paths['ad_meta_dir'], 'compose-verbose')
+            meta_compose_dir = os.path.join(self.paths['ad_meta_dir'], 'compose-verbose')
             dockerfile_path = tools.generate_dockerfile(folder=meta_compose_dir,
                                                         executor=workflow,
                                                         dock_type='tracker',
@@ -132,7 +132,7 @@ class BackendArgo(backend.Backend):
 
 
             tracker_image_name = f"tracker-{workflow['name']}"
-            tracker_dir = os.path.join(self.ad_paths['ad_tracker_dir'], tracker_image_name )
+            tracker_dir = os.path.join(self.paths['ad_tracker_dir'], tracker_image_name )
             metadata = tools.build_image_to_registry(self.registry, tracker_image_name, meta_compose_dir,
                                          dockerfile_path, 'tracker', port, tracker_dir)
             environments.append(metadata)
@@ -145,7 +145,7 @@ class BackendArgo(backend.Backend):
                                                                   port=port_agent)
 
                 tracker_agent_image_name = f"tracker-agent-{workflow['name']}"
-                tracker_dir = os.path.join(self.ad_paths['ad_tracker_dir'], tracker_image_name )
+                tracker_dir = os.path.join(self.paths['ad_tracker_dir'], tracker_image_name )
                 metadata = tools.build_image_to_registry(self.registry, tracker_agent_image_name, meta_compose_dir,
                                              dockerfile_agent_path, 'tracker-agent', port_agent, tracker_dir)
 
@@ -154,7 +154,7 @@ class BackendArgo(backend.Backend):
 
             if 'checker' in workflow.keys():
                 port = workflow['checker']['port']
-                meta_compose_dir = os.path.join(self.ad_paths['ad_meta_dir'], 'compose-verbose')
+                meta_compose_dir = os.path.join(self.paths['ad_meta_dir'], 'compose-verbose')
                 dockerfile_path = tools.generate_dockerfile(folder=meta_compose_dir,
                                                             executor=workflow,
                                                             dock_type='checker',
@@ -162,7 +162,7 @@ class BackendArgo(backend.Backend):
 
 
                 checker_image_name = f"checker-{workflow['name']}"
-                checker_dir = os.path.join(self.ad_paths['ad_checker_dir'], checker_image_name )
+                checker_dir = os.path.join(self.paths['ad_checker_dir'], checker_image_name )
                 metadata = tools.build_image_to_registry(self.registry, checker_image_name, meta_compose_dir,
                                              dockerfile_path, 'checker', port, checker_dir)
                 environments.append(metadata)
@@ -177,14 +177,14 @@ class BackendArgo(backend.Backend):
                                                                       port=port_agent)
 
                     checker_agent_image_name = f"checker-agent-{workflow['name']}"
-                    checker_dir = os.path.join(self.ad_paths['ad_checker_dir'], checker_agent_image_name )
+                    checker_dir = os.path.join(self.paths['ad_checker_dir'], checker_agent_image_name )
                     metadata = tools.build_image_to_registry(self.registry, checker_agent_image_name, meta_compose_dir, dockerfile_agent_path, 'checker-agent', port_agent, checker_dir)
 
                     environments.append(metadata)
                     
 
             if 'improver' in workflow.keys():
-                meta_compose_dir = os.path.join(self.ad_paths['ad_meta_dir'], 'compose-verbose')
+                meta_compose_dir = os.path.join(self.paths['ad_meta_dir'], 'compose-verbose')
 
                 if workflow['improver']['mode'] == 'online':
                     port_agent = workflow['improver']['port']
@@ -194,7 +194,7 @@ class BackendArgo(backend.Backend):
                                                                       port=port_agent)
 
                     improver_agent_image_name = f"improver-agent-{workflow['name']}"
-                    improver_dir = os.path.join(self.ad_paths['improver_dir'], improver_agent_image_name )
+                    improver_dir = os.path.join(self.paths['improver_dir'], improver_agent_image_name )
                     metadata = tools.build_image_to_registry(self.registry, improver_agent_image_name, meta_compose_dir,
                                                  dockerfile_agent_path, 'improver-agent', port_agent, improver_dir)
 
@@ -205,7 +205,7 @@ class BackendArgo(backend.Backend):
                     raise ValueError('Improver can be only deployed in online mode. Please set mode=online.')
 
             if 'planner' in workflow.keys():
-                meta_compose_dir = os.path.join(self.ad_paths['ad_meta_dir'], 'compose-verbose')
+                meta_compose_dir = os.path.join(self.paths['ad_meta_dir'], 'compose-verbose')
 
                 if workflow['planner']['mode'] == 'online':
                     port_agent = workflow['planner']['port']
@@ -215,7 +215,7 @@ class BackendArgo(backend.Backend):
                                                                       port=port_agent)
 
                     planner_agent_image_name = f"planner-agent-{workflow['name']}"
-                    planner_dir = os.path.join(self.ad_paths['planner_dir'], planner_agent_image_name )
+                    planner_dir = os.path.join(self.paths['planner_dir'], planner_agent_image_name )
                     metadata = tools.build_image_to_registry(self.registry, planner_agent_image_name, meta_compose_dir,
                                                  dockerfile_agent_path, 'planner-agent', port_agent, planner_dir)
 
@@ -245,7 +245,7 @@ class BackendArgo(backend.Backend):
             tracker_name = f"tracker-{workflow['name']}"
             logging.info(f"[+] Starting tracker: [{tracker_name}].")
 
-            workflow_tracker_dir = os.path.join(self.ad_paths['ad_tracker_dir'], f"tracker-{workflow['name']}" )
+            workflow_tracker_dir = os.path.join(self.paths['ad_tracker_dir'], f"tracker-{workflow['name']}" )
             os.makedirs(workflow_tracker_dir, exist_ok=True)
 
             logging.info(f"[+] Create tracker PV")
@@ -307,7 +307,7 @@ class BackendArgo(backend.Backend):
             checker_name = f"checker-{workflow['name']}"
             logging.info(f"[+] Starting checker: [{checker_name}].")
 
-            workflow_checker_dir = self.ad_paths['ad_checker_dir']
+            workflow_checker_dir = self.paths['ad_checker_dir']
             os.makedirs(workflow_checker_dir, exist_ok=True)
 
 #            logging.info(f"[+] Create checker PV")
@@ -367,7 +367,7 @@ class BackendArgo(backend.Backend):
 
 
         if 'improver' in workflow.keys():
-            workflow_improver_dir = self.ad_paths['improver_dir']
+            workflow_improver_dir = self.paths['improver_dir']
             os.makedirs(workflow_improver_dir, exist_ok=True)
 
             if workflow['improver']['mode'] == 'online':
@@ -404,7 +404,7 @@ class BackendArgo(backend.Backend):
 
 
         if 'planner' in workflow.keys():
-            workflow_planner_dir = self.ad_paths['planner_dir']
+            workflow_planner_dir = self.paths['planner_dir']
             os.makedirs(workflow_planner_dir, exist_ok=True)
 
             if workflow['planner']['mode'] == 'online':
@@ -451,7 +451,7 @@ class BackendArgo(backend.Backend):
         """
         run workflow by argo
         """
-        workflow_dir = self.ad_paths['app_workflow_dir']
+        workflow_dir = self.paths['workflow_dir']
         workflow_name = f"{workflow['name']}"
         tracker_name = f"tracker-{workflow['name']}"
 

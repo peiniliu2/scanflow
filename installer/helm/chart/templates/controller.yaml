@@ -48,9 +48,9 @@ spec:
         app: scanflow-controller
     spec:
       volumes:
-        - name: pvc-scanflow-artifacts
+        - name: pvc-scanflow-tracker
           persistentVolumeClaim:
-            claimName: pvc-scanflow-artifacts
+            claimName: pvc-scanflow-tracker
         - name: pvc-scanflow-server
           persistentVolumeClaim:
             claimName: pvc-scanflow-server
@@ -58,9 +58,12 @@ spec:
           - name: {{ .Release.Name }}-controller
             image: {{.Values.basic.scanflow_controller_image_name}}:{{.Values.basic.image_tag_version}}
             imagePullPolicy: Always
+            env:
+              - name: MLFLOW_TRACKING_URI
+                value: http://{{ .Release.Name }}-tracker-service.{{ .Release.Namespace }}.svc.cluster.local
             volumeMounts:
               - mountPath: /mlflow
-                name: pvc-scanflow-artifacts
+                name: pvc-scanflow-tracker
               - mountPath: /app
                 name: pvc-scanflow-server
       restartPolicy: Always
@@ -74,7 +77,7 @@ metadata:
   namespace: {{ .Release.Namespace }} 
 spec:
   ports:
-  - port: 8080
+  - port: 80
     protocol: TCP
     targetPort: 8080
     nodePort: 46666

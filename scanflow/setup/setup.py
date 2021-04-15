@@ -34,6 +34,7 @@ class Setup:
     """
 
     def __init__(self,
+                 app_name: str,
                  app_dir: str,
                  workflows: List['Workflow'] = None,
                  verbose: bool = False):
@@ -50,7 +51,8 @@ class Setup:
         """
         # self.app_type = app_type
         self.app_dir = app_dir
-        self.ad_paths = tools.get_scanflow_paths(app_dir)
+        self.app_name = app_name
+        self.paths = tools.get_scanflow_paths(app_dir)
         self.workflows_user = [w.to_dict for w in workflows]
         self.verbose = verbose
         tools.check_verbosity(verbose)
