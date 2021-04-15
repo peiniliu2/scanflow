@@ -6,7 +6,6 @@ import requests
 import datetime
 
 from shutil import copy2
-from scanflow import tools
 from textwrap import dedent
 from multiprocessing import Pool
 

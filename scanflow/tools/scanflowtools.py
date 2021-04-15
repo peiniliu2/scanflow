@@ -1,4 +1,5 @@
 import os
+import logging
 
 def get_scanflow_paths(app_dir):
     # 1. save workflow defined by user
@@ -24,3 +25,10 @@ def get_scanflow_paths(app_dir):
                 'deploy': deploy_dir}
 
     return paths
+
+def check_verbosity(verbose):
+    logger = logging.getLogger()
+    if verbose:
+        logger.disabled = False
+    else:
+        logger.disabled = True

@@ -6,7 +6,7 @@ from textwrap import dedent
 from multiprocessing import Pool
 
 import mlflow
-from scanflow.tool import *
+from scanflow.tools import mlflowtools
 import requests
 import json
 

@@ -1,7 +1,7 @@
 """
 abstract backend class
 """
-from scanflow import tools
+from scanflow.tools.scanflowtools import get_scanflow_paths, check_verbosity
 
 class Backend():
     def __init__(self,
@@ -11,11 +11,11 @@ class Backend():
         if workflower is not None:
             self.app_name = workflower.app_name
             self.app_dir = workflower.app_dir
-            self.paths = tools.get_scanflow_paths(workflower.app_dir)
+            self.paths = get_scanflow_paths(workflower.app_dir)
             self.workflows_user = workflower.workflows_user
         else:
             self.workflows_user = None
-        tools.check_verbosity(verbose)
+        check_verbosity(verbose)
 
     
     def build_workflows(self):

@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-# Author: Gusseppe Bravo <gbravor@uni.pe>
-# License: BSD 3 clause
-
 import logging
 import os
 import datetime
@@ -24,202 +20,6 @@ logging.getLogger().setLevel(logging.INFO)
 client = docker.from_env()
 
 
-def generate_compose(ad_paths, workflows, compose_type='repository'):
-
-    compose_dir = None
-
-    if compose_type == 'repository':
-        compose_dic, main_file = compose_template_repo(ad_paths, workflows)
-        compose_dir = os.path.join(ad_paths['ad_meta_dir'], 'compose-repository')
-    elif compose_type == 'verbose':
-        compose_dic, main_file = compose_template_verbose(ad_paths, workflows)
-        compose_dir = os.path.join(ad_paths['ad_meta_dir'], 'compose-verbose')
-    elif compose_type == 'swarm':
-        compose_dic, main_file = compose_template_swarm(ad_paths, workflows)
-        compose_dir = os.path.join(ad_paths['ad_meta_dir'], 'compose-swarm')
-    else:
-        compose_dic, main_file = compose_template_swarm(ad_paths, workflows)
-        compose_dir = os.path.join(ad_paths['ad_meta_dir'], 'compose-kubernetes')
-
-    os.makedirs(compose_dir, exist_ok=True)
-    compose_path = os.path.join(compose_dir, 'docker-compose.yml')
-    main_file_path = os.path.join(compose_dir, 'main.py')
-
-    with open(compose_path, 'w') as f:
-        yaml.dump(compose_dic, f, default_flow_style=False)
-
-    with open(main_file_path, 'w') as f:
-        f.writelines(main_file)
-
-    logging.info(f'[+] Compose file [{compose_path}] was created successfully.')
-    logging.info(f'[+] Main file [{main_file_path}] was created successfully.')
-    # else:
-    #     logging.info(f'[+] MLproject was found.')
-    return compose_path
-
-
-def compose_template_repo(ad_paths, workflows):
-
-    compose_dic = {
-        'version': '3',
-        'services': {},
-        'networks': {}
-    }
-
-    id_date = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
-
-    for workflow in workflows:
-        # Executors
-        for node in workflow['executors']:
-            tracker_dir = os.path.join(ad_paths['ad_tracker_dir'], f"tracker-{workflow['name']}")
-            compose_dic['services'].update({
-                node['name']: {
-                    'image': node['name'],
-                    'container_name': f"{node['name']}-{id_date}",
-                    'networks': [f"network-{workflow['name']}"],
-                    'depends_on': [f"tracker-{workflow['name']}"],
-                    'environment': {
-                        'MLFLOW_TRACKING_URI': f"http://tracker-{workflow['name']}:{workflow['tracker']['port']}"
-                    },
-                    'volumes': [f"{ad_paths['app_dir']}:/app",
-                                f"{tracker_dir}:/mlflow"],
-                    'tty': 'true'
-
-                }
-            })
-
-        # Trackers
-        if 'tracker' in workflow.keys():
-            tracker_dir = os.path.join(ad_paths['ad_tracker_dir'], f"tracker-{workflow['name']}")
-            port = workflow['tracker']['port']
-            compose_dic['services'].update({
-                f"tracker-{workflow['name']}": {
-                    'image': f"tracker-{workflow['name']}",
-                    'container_name': f"tracker-{workflow['name']}-{id_date}",
-                    'networks': [f"network-{workflow['name']}"],
-                    'volumes': [f"{tracker_dir}:/mlflow"],
-                    'ports': [f"{port+5}:{port}"]
-
-                }
-            })
-
-        # networks
-        net_name = f"network_{workflow['name']}"
-        compose_dic['networks'].update({net_name: None})
-
-    main_file = generate_main_file(ad_paths['app_dir'], id_date)
-
-    return compose_dic, main_file
-
-
-def compose_template_verbose(ad_paths, workflows):
-
-    compose_dic = {
-        'version': '3',
-        'services': {},
-        'networks': {}
-    }
-
-    id_date = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
-
-    for workflow in workflows:
-        # Executors
-        for node in workflow['executors']:
-            tracker_dir = os.path.join(ad_paths['ad_tracker_dir'], f"tracker-{workflow['name']}")
-            compose_dic['services'].update({
-                node['name']: {
-                    'image': node['name'],
-                    'container_name': f"{node['name']}-{id_date}",
-                    'networks': [f"network-{workflow['name']}"],
-                    'depends_on': [f"tracker-{workflow['name']}"],
-                    'environment': {
-                        'MLFLOW_TRACKING_URI': f"http://tracker-{workflow['name']}:{workflow['tracker']['port']}"
-                    },
-                    'volumes': [f"{ad_paths['app_dir']}:/app",
-                                f"{tracker_dir}:/mlflow"],
-                    # 'tty': 'true'
-
-                }
-            })
-
-        # Trackers
-        if 'tracker' in workflow.keys():
-            tracker_dir = os.path.join(ad_paths['ad_tracker_dir'], f"tracker-{workflow['name']}")
-            port = workflow['tracker']['port']
-            compose_dic['services'].update({
-                f"tracker-{workflow['name']}": {
-                    'image': f"tracker-{workflow['name']}",
-                    'container_name': f"tracker-{workflow['name']}-{id_date}",
-                    'networks': [f"network-{workflow['name']}"],
-                    'volumes': [f"{tracker_dir}:/mlflow"],
-                    'ports': [f"{port+5}:{port}"]
-
-                }
-            })
-
-        # networks
-        net_name = f"network_{workflow['name']}"
-        compose_dic['networks'].update({net_name: None})
-
-    main_file = generate_main_file(ad_paths['app_dir'], id_date)
-
-    return compose_dic, main_file
-
-
-def compose_template_swarm(ad_paths, workflows):
-
-    compose_dic = {
-        'version': '3',
-        'services': {},
-        'networks': {}
-    }
-
-    id_date = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
-
-    for workflow in workflows:
-        # Executors
-        for node in workflow['executors']:
-            tracker_dir = os.path.join(ad_paths['ad_tracker_dir'], f"tracker-{workflow['name']}")
-            compose_dic['services'].update({
-                node['name']: {
-                    'image': node['name'],
-                    'container_name': f"{node['name']}-{id_date}",
-                    'networks': [f"network-{workflow['name']}"],
-                    'depends_on': [f"tracker-{workflow['name']}"],
-                    'environment': {
-                        'MLFLOW_TRACKING_URI': f"http://tracker-{workflow['name']}:{workflow['tracker']['port']}"
-                    },
-                    'volumes': [f"{ad_paths['app_dir']}:/app",
-                                f"{tracker_dir}:/mlflow"],
-                    # 'tty': 'true'
-
-                }
-            })
-
-        # Trackers
-        if 'tracker' in workflow.keys():
-            tracker_dir = os.path.join(ad_paths['ad_tracker_dir'], f"tracker-{workflow['name']}")
-            port = workflow['tracker']['port']
-            compose_dic['services'].update({
-                f"tracker-{workflow['name']}": {
-                    'image': f"tracker-{workflow['name']}",
-                    'container_name': f"tracker-{workflow['name']}-{id_date}",
-                    'networks': [f"network-{workflow['name']}"],
-                    'volumes': [f"{tracker_dir}:/mlflow"],
-                    'ports': [f"{port+5}:{port}"]
-
-                }
-            })
-
-        # networks
-        net_name = f"network_{workflow['name']}"
-        compose_dic['networks'].update({net_name: None})
-
-    main_file = generate_main_file(ad_paths['app_dir'], id_date)
-
-    return compose_dic, main_file
-
-
 def generate_dockerfile(folder, dock_type='executor', executor=None, port=None):
     # if len(dockerfile) == 0:
     dockerfile = None
@@ -230,6 +30,21 @@ def generate_dockerfile(folder, dock_type='executor', executor=None, port=None):
     elif dock_type == 'tracker':
         dockerfile = dockerfile_template_tracker(port)
         filename = f"Dockerfile_tracker_{executor['name']}"
+    elif dock_type == 'tracker_agent':
+        dockerfile = dockerfile_template_tracker_agent(port)
+        filename = f"Dockerfile_tracker_agent_{executor['name']}"
+    elif dock_type == 'checker':
+        dockerfile = dockerfile_template_checker(port)
+        filename = f"Dockerfile_checker_{executor['name']}"
+    elif dock_type == 'checker_agent':
+        dockerfile = dockerfile_template_checker_agent(port)
+        filename = f"Dockerfile_checker_agent_{executor['name']}"
+    elif dock_type == 'improver_agent':
+        dockerfile = dockerfile_template_improver_agent(port)
+        filename = f"Dockerfile_improver_agent_{executor['name']}"
+    elif dock_type == 'planner_agent':
+        dockerfile = dockerfile_template_planner_agent(port)
+        filename = f"Dockerfile_planner_agent_{executor['name']}"
 
     dockerfile_path = os.path.join(folder, filename)
     with open(dockerfile_path, 'w') as f:
@@ -253,11 +68,12 @@ def dockerfile_template_executor(executor):
                 WORKDIR /app
                 RUN pip install -r {executor['requirements']}
 
+                ENTRYPOINT ["python", "/app/{executor['file']}"]
     ''')
     return template
 
 
-def dockerfile_template_tracker(port=8001):
+def dockerfile_template_tracker(port=8002):
     # if app_type == 'single':
     template = dedent(f'''
                 FROM continuumio/miniconda3
@@ -266,10 +82,10 @@ def dockerfile_template_tracker(port=8001):
                 ENV MLFLOW_HOME  /mlflow
                 ENV MLFLOW_HOST  0.0.0.0
                 ENV MLFLOW_PORT  {port}
-                ENV MLFLOW_BACKEND  /mlflow/mlruns
+                ENV MLFLOW_BACKEND  sqlite:////mlflow/backend.sqlite
                 ENV MLFLOW_ARTIFACT  /mlflow/mlruns
 
-                RUN pip install mlflow
+                RUN pip install mlflow==1.14.1
                 RUN mkdir $MLFLOW_HOME
                 RUN mkdir -p $MLFLOW_BACKEND
                 RUN mkdir -p $MLFLOW_ARTIFACT
@@ -284,6 +100,127 @@ def dockerfile_template_tracker(port=8001):
     ''')
     return template
 
+def dockerfile_template_tracker_agent(port=8003):
+    # if app_type == 'single':
+    template = dedent(f'''
+                FROM continuumio/miniconda3
+                LABEL maintainer='scanflow'
+
+                ENV AGENT_BASE_PATH  /tracker
+                ENV AGENT_HOME  /tracker/agent
+                ENV AGENT_PORT  {port}
+
+                RUN pip install mlflow==1.14.1
+                RUN pip install fastapi
+                RUN pip install uvicorn
+                RUN pip install aiohttp
+                RUN pip install aiodns
+
+                RUN mkdir $AGENT_BASE_PATH
+                RUN mkdir -p $AGENT_HOME
+
+                WORKDIR $AGENT_HOME
+
+                CMD uvicorn tracker_agent:app --reload --host 0.0.0.0 --port $AGENT_PORT
+
+    ''')
+    return template
+
+def dockerfile_template_checker(port=8004):
+    # if app_type == 'single':
+    template = dedent(f'''
+                FROM continuumio/miniconda3
+                LABEL maintainer='scanflow'
+
+                ENV CHECKER_HOME  /checker
+
+                RUN pip install tensorflow==2.4.1
+                RUN pip install mlflow==1.14.1
+                RUN mkdir $CHECKER_HOME
+
+                WORKDIR $CHECKER_HOME
+
+
+    ''')
+    return template
+
+def dockerfile_template_checker_agent(port=8005):
+    # if app_type == 'single':
+    template = dedent(f'''
+                FROM continuumio/miniconda3
+                LABEL maintainer='scanflow'
+
+                ENV AGENT_BASE_PATH  /checker
+                ENV AGENT_HOME  /checker/agent
+                ENV AGENT_PORT  {port}
+
+                RUN pip install mlflow==1.14.1
+                RUN pip install fastapi
+                RUN pip install uvicorn
+                RUN pip install aiohttp
+                RUN pip install aiodns
+
+                RUN mkdir $AGENT_BASE_PATH
+                RUN mkdir -p $AGENT_HOME
+
+                WORKDIR $AGENT_HOME
+
+                CMD uvicorn checker_agent:app --reload --host 0.0.0.0 --port $AGENT_PORT
+
+    ''')
+    return template
+
+def dockerfile_template_improver_agent(port=8005):
+    # if app_type == 'single':
+    template = dedent(f'''
+                FROM continuumio/miniconda3
+                LABEL maintainer='scanflow'
+
+                ENV AGENT_BASE_PATH  /improver
+                ENV AGENT_HOME  /improver/agent
+                ENV AGENT_PORT  {port}
+
+                RUN pip install mlflow==1.14.1
+                RUN pip install fastapi
+                RUN pip install uvicorn
+                RUN pip install aiohttp
+                RUN pip install aiodns
+
+                RUN mkdir $AGENT_BASE_PATH
+                RUN mkdir -p $AGENT_HOME
+
+                WORKDIR $AGENT_HOME
+
+                CMD uvicorn improver_agent:app --reload --host 0.0.0.0 --port $AGENT_PORT
+
+    ''')
+    return template
+
+def dockerfile_template_planner_agent(port=8005):
+    # if app_type == 'single':
+    template = dedent(f'''
+                FROM continuumio/miniconda3
+                LABEL maintainer='scanflow'
+
+                ENV AGENT_BASE_PATH  /planner
+                ENV AGENT_HOME  /planner/agent
+                ENV AGENT_PORT  {port}
+
+                RUN pip install mlflow==1.14.1
+                RUN pip install fastapi
+                RUN pip install uvicorn
+                RUN pip install aiohttp
+                RUN pip install aiodns
+
+                RUN mkdir $AGENT_BASE_PATH
+                RUN mkdir -p $AGENT_HOME
+
+                WORKDIR $AGENT_HOME
+
+                CMD uvicorn planner_agent:app --reload --host 0.0.0.0 --port $AGENT_PORT
+
+    ''')
+    return template
 
 def generate_main_file(app_dir, id_date):
 
@@ -436,8 +373,56 @@ def build_image(name, dockerfile_dir, dockerfile_path,
         logging.error(f"{e}")
         logging.error(f"[-] Image building failed.", exc_info=True)
 
+def build_image_to_registry(registry, name, dockerfile_dir, dockerfile_path,
+                node_type='executor', port=None, tracker_dir=None):
 
-def start_image(image, name, network=None, volume=None, port=None, environment=None):
+    image_from_repo = None
+
+    try:
+        image_from_repo = client.images.get(name)
+
+    except docker.api.client.DockerException as e:
+        logging.info(f"[+] Image [{name}] not found in repository. Building a new one.")
+    try:
+
+        if image_from_repo is None:
+            tag = f"{registry}/{name}"
+            image = client.images.build(path=dockerfile_dir,
+                                        dockerfile=dockerfile_path,
+                                        tag=tag)
+            logging.info(f'[+] Image [{name}] was built successfully.')
+            client.images.push(tag)
+            logging.info(f'[+] Image [{name}] was pushed to registry successfully.')
+            if node_type == 'tracker':
+                metadata = {'name': name, 'image': image[0].tags,
+                            'type': node_type, 'status': 0,
+                            'port': port, 'tracker_dir': tracker_dir}  # 0:not running
+            else:
+                metadata = {'name': name, 'image': image[0].tags,
+                            'type': node_type, 'status': 0} # 0:not running
+            return metadata
+
+        else:
+            logging.warning(f'[+] Image [{name}] already exists.')
+            logging.info(f'[+] Image [{name}] was loaded successfully.')
+
+            if node_type == 'tracker':
+                metadata = {'name': name, 'image': image_from_repo.tags,
+                            'type': node_type, 'status': 0,
+                            'port': port, 'url': f'http://localhost:{port}/',
+                            'tracker_dir': tracker_dir}  # 0:not running
+            else:
+                metadata = {'name': name, 'image': image_from_repo.tags,
+                            'type': node_type, 'status': 0} # 0:not running
+
+            return metadata
+
+    except docker.api.client.DockerException as e:
+        logging.error(f"{e}")
+        logging.error(f"[-] Image building failed.", exc_info=True)
+
+ 
+def start_image(image, name, network=None, **kwargs):
 
     container_from_env = None
 
@@ -457,48 +442,12 @@ def start_image(image, name, network=None, volume=None, port=None, environment=N
     try:
 
         if container_from_env is None:  # does not exist in repo
-            if (volume is not None) and (port is None):
-                if environment is not None:
-                    env_container = client.containers.run(image=image, name=name,
-                                                          network=network,
-                                                          tty=True, detach=True,
-                                                          volumes=volume, environment=environment)
-
-                    # logging.info(f'[+] Container [{name}] was built successfully.')
-                    logging.info(f'[+] Environment: [{name}] was started successfully with tracker')
-                else:
-                    env_container = client.containers.run(image=image, name=name,
-                                                          network=network,
-                                                          tty=True, detach=True,
-                                                          volumes=volume)
-
-                    # logging.info(f'[+] Container [{name}] was built successfully.')
-                    logging.info(f'[+] Environment: [{name}] was started successfully')
-
-                # self.env_image = image[0]
-                # environments.append({name: {'image': image[0]}})
-                return env_container
-
-            elif (volume is not None) and (port is not None):
-                ports = {f'{port}/tcp': port}
-                # tracker_image_name = f"tracker_{workflow['name']}"
-                tracker_container = client.containers.run(image=image, name=name,
-                                                          network=network,
-                                                          tty=True, detach=True,
-                                                          ports=ports, volumes=volume)
-                logging.info(f'[+] Tracker: [{name}] was started successfully')
-
-                return tracker_container
-            elif port is not None and volume is None and environment is None:
-                port_predictor_ctn = 8080
-                ports = {f'{port_predictor_ctn}/tcp': port}
-                # tracker_image_name = f"tracker_{workflow['name']}"
-                predictor = client.containers.run(image=image, name=name,
+            env_container = client.containers.run(image=image, name=name,
+                                                  network=network,
                                                   tty=True, detach=True,
-                                                  ports=ports)
-                logging.info(f'[+] Predictor: [{name}] was started successfully')
+                                                  **kwargs)
 
-                return predictor
+            return env_container
         else:
             logging.warning(f'[+] Environment: [{name}] is already running.')
             # logging.info(f'[+] Image [{name}] was loaded successfully.')
@@ -519,13 +468,6 @@ def start_network(name):
 
     try:
         net_from_env = client.networks.get(name)
-
-        # if container_from_env.status == 'exited':
-        #     container_from_env.stop()
-        #     container_from_env.remove()
-        #     container_from_env = None
-        # return {'name': name, 'ctn': container_from_env}
-        # return container_from_env
 
     except docker.api.client.DockerException as e:
         # logging.error(f"{e}")
@@ -638,25 +580,29 @@ def check_verbosity(verbose):
 
 
 def get_scanflow_paths(app_dir):
-    app_workflow_dir = os.path.join(app_dir, 'workflow')
-    ad_stuff_dir = os.path.join(app_dir, 'ad-stuff')
-    ad_meta_dir = os.path.join(ad_stuff_dir, 'ad-meta')
-    ad_tracker_dir = os.path.join(ad_stuff_dir, 'ad-tracker')
-    ad_checker_dir = os.path.join(ad_stuff_dir, 'ad-checker')
-    ad_checker_pred_dir = os.path.join(ad_checker_dir, 'predictions')
-    ad_checker_model_dir = os.path.join(ad_checker_dir, 'model')
-    ad_checker_scaler_dir = os.path.join(ad_checker_dir, 'scaler')
-    ad_paths = {'app_dir': app_dir,
-                'app_workflow_dir': app_workflow_dir,
-                'ad_stuff_dir': ad_stuff_dir,
-                'ad_meta_dir': ad_meta_dir,
-                'ad_tracker_dir': ad_tracker_dir,
-                'ad_checker_dir': ad_checker_dir,
-                'ad_checker_pred_dir': ad_checker_pred_dir,
-                'ad_checker_model_dir': ad_checker_model_dir,
-                'ad_checker_scaler_dir': ad_checker_scaler_dir}
+    # 1. save workflow defined by user
+    workflow_dir = os.path.join(app_dir, 'workflow')
+    # 2. start template agent inside, and user modify the agents
+    agents_dir = os.path.join(app_dir, 'agents')
+    tracker_dir = os.path.join(agents_dir, 'tracker')
+    checker_dir = os.path.join(agents_dir, 'checker')
+    improver_dir = os.path.join(agents_dir, 'improver')
+    planner_dir = os.path.join(agents_dir, 'planner')
+    # 3. meta data generated by scanflow(for example, workflow.json) 
+    meta_dir = os.path.join(app_dir, 'meta')
+    deploy_dir = os.path.join(meta_dir, 'deploy')#maybe generate app
 
-    return ad_paths
+    paths = {'app_dir': app_dir,
+                'workflow_dir': workflow_dir,
+                'agents_dir': agents_dir,
+                'meta_dir': meta_dir,
+                'tracker_dir': tracker_dir,
+                'checker_dir': checker_dir,
+                'improver_dir': improver_dir,
+                'planner_dir': planner_dir,
+                'deploy': deploy_dir}
+
+    return paths
 
 
 def predict(input_path, port=5001):
@@ -713,6 +659,10 @@ def run_step(step):
         env_container = client.containers.get(env_name)
         if 'parameters' in step.keys():
             cmd = f"python {step['file']} {format_parameters(step['parameters'])}"
+            # result = env_container.exec_run(cmd=cmd,
+            #                                 workdir='/app/workflow')
+            # result = env_container.exec_run(cmd=cmd,
+            #                                 workdir='/mlperf')
             result = env_container.exec_run(cmd=cmd,
                                             workdir='/app/workflow')
         else:
@@ -736,8 +686,8 @@ def run_step(step):
     return None
 
 
-def save_workflows(ad_paths, workflows):
-    meta_dir = ad_paths['ad_meta_dir']
+def save_workflows(paths, workflows):
+    meta_dir = paths['meta_dir']
 
     workflows_metadata_name = 'workflows.json'
     workflows_metadata_path = os.path.join(meta_dir, workflows_metadata_name)
@@ -746,8 +696,8 @@ def save_workflows(ad_paths, workflows):
         json.dump(workflows, fout)
 
 
-def read_workflows(ad_paths):
-    meta_dir = ad_paths['ad_meta_dir']
+def read_workflows(paths):
+    meta_dir = paths['meta_dir']
 
     workflows_metadata_name = 'workflows.json'
     workflows_metadata_path = os.path.join(meta_dir, workflows_metadata_name)
@@ -826,5 +776,8 @@ def draw_graph(graph):
     pos = nx.spectral_layout(G)
     color_nodes = {**parent_nodes, **rest_nodes}
     color_map = [color_nodes[node] for node in G.nodes()]
+    fig = plt.figure()
+    fig.add_subplot(1, 1, 1)
+    plt.title("Workflow")
     nx.draw(G, pos, node_color=color_map, with_labels = True, arrows=True)
     plt.show()
