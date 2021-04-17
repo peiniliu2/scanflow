@@ -36,6 +36,27 @@ def get_latest_run_id(experiment_id, filter_string='', order_by=None):
     runs = client.search_runs(experiment_id,filter_string=filter_string,order_by=order_by)
     return runs[0].run_id
 
+def get_experiment_id_by_name(app_name):
+    logging.info("Scanflow tracking server uri: {}".format(mlflow.get_tracking_uri()))
+    experiment = client.get_experiment_by_name(app_name)
+    if experiment is None:
+        logging.info(f"no app {app_name}")  
+    elif experiment.lifecycle_stage == "deleted":
+        logging.info(f"app status {app_name}: deleted")
+    else:
+        return experiment.experiment_id
+    return None
+
+def create_experiment(app_name):
+    experiment_id = mlflow.create_experiment(app_name)
+    experiment = mlflow.get_experiment(experiment_id)
+    print("Name: {}".format(experiment.name))
+    print("Experiment_id: {}".format(experiment.experiment_id))
+    print("Artifact Location: {}".format(experiment.artifact_location))
+    print("Tags: {}".format(experiment.tags))
+    print("Lifecycle_stage: {}".format(experiment.lifecycle_stage))
+
+
                                     
 
 

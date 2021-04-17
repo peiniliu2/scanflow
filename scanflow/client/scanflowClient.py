@@ -35,6 +35,7 @@ class ScanflowClient:
             self.server_tracker_uri = server_tracker_uri
 
         mlflow.set_tracking_uri(self.server_tracker_uri)
+        logging.info("Scanflow tracking server uri: {}".format(mlflow.get_tracking_uri()))
 
     def get_deploy_backend(self,
                            workflower=None,
@@ -84,9 +85,18 @@ class ScanflowClient:
         """
            save local implemented app to scanflow server
         """
-        with mlflow.start_run(experiment_id=app_name,
-                            run_name=run_name):
-            mlflow.log_artifacts(app_dir, artifact_path=app_name)
+        experiment_id = mlflowtools.get_experiment_id_by_name(app_name)
+        if experiment_id is not None:
+            with mlflow.start_run(experiment_id=experiment_id,
+                                run_name=run_name):
+                mlflow.log_artifacts(app_dir, artifact_path=app_name)
+        else:
+            logging.info(f"{app_name} project does not exsits, create one")
+            mlflowtools.create_experiment(app_name)
+            experiment_id = mlflowtools.get_experiment_id_by_name(app_name)
+            with mlflow.start_run(experiment_id=experiment_id,
+                                run_name=run_name):
+                mlflow.log_artifacts(app_dir, artifact_path=app_name)
     
     def download_app(self, app_name=None, run_id=None, run_name=None, local_dir=None):
         """

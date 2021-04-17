@@ -48,9 +48,6 @@ spec:
         app: scanflow-controller
     spec:
       volumes:
-        - name: pvc-scanflow-tracker
-          persistentVolumeClaim:
-            claimName: pvc-scanflow-tracker
         - name: pvc-scanflow-server
           persistentVolumeClaim:
             claimName: pvc-scanflow-server
@@ -62,8 +59,6 @@ spec:
               - name: MLFLOW_TRACKING_URI
                 value: http://{{ .Release.Name }}-tracker-service.{{ .Release.Namespace }}.svc.cluster.local
             volumeMounts:
-              - mountPath: /mlflow
-                name: pvc-scanflow-tracker
               - mountPath: /app
                 name: pvc-scanflow-server
       restartPolicy: Always

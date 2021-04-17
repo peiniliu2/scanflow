@@ -23,7 +23,6 @@ logging.getLogger().setLevel(logging.INFO)
 
 client = docker.from_env()
 
-
 class BackendDocker(backend.Backend):
     def __init__(self,
                  # app_dir=None,

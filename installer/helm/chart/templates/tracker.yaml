@@ -1,36 +1,5 @@
 #mlflow for saving artifacts
 
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: pv-scanflow-tracker
-  labels:
-    type: local
-spec:
-  capacity:
-    storage: 2Gi
-  accessModes:
-    - ReadWriteMany
-  hostPath:
-    path: "/gpfs/bsc_home/xpliu/pv/scanflow"
-
-
----
-
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: pvc-scanflow-tracker
-  namespace: {{ .Release.Namespace }}
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 2Gi 
-
----
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -48,17 +17,24 @@ spec:
       labels:
         app: scanflow-tracker
     spec:
-      volumes:
-        - name: pvc-scanflow-tracker
-          persistentVolumeClaim:
-            claimName: pvc-scanflow-tracker
       containers:
-        - image: {{.Values.basic.scanflow_artifacts_image_name}}:{{.Values.basic.image_tag_version}}
+        - image: {{.Values.basic.scanflow_trakcer_image_name}}:{{.Values.basic.image_tag_version}}
           imagePullPolicy: Always
           name: {{ .Release.Name }}-tracker
-          volumeMounts:
-            - mountPath: /mlflow
-              name: pvc-scanflow-tracker
+          env:
+            - name: MLFLOW_STORAGE
+              value: {{.Values.tracker.scanflow_tracker_storage_backend}}://{{.Values.tracker.scanflow_tracker_storage_username}}:{{.Values.tracker.scanflow_tracker_storage_password}}@{{.Values.tracker.scanflow_tracker_storage_url}}/scanflow
+            - name: MLFLOW_ARTIFACT
+              value: {{.Values.tracker.scanflow_tracker_artifact_backend}}://scanflow
+            - name: MLFLOW_S3_ENDPOINT_URL
+              value: {{.Values.tracker.scanflow_tracker_artifact_url}}
+            - name: AWS_ACCESS_KEY_ID
+              value: {{.Values.tracker.scanflow_tracker_artifact_username}}
+            - name: AWS_SECRET_ACCESS_KEY
+              value: {{.Values.tracker.scanflow_tracker_artifact_password}}
+          #command: [ "/bin/bash", "-c", "--" ]
+          #args: [ "while true; do sleep 30; done;" ]
+          #command: ["mlflow server --backend-store-uri $(MLFLOW_STORAGE)  --default-artifact-root $(MLFLOW_ARTIFACT) --host 0.0.0.0"]
       restartPolicy: Always
 
 ---
@@ -72,7 +48,7 @@ spec:
   ports:
   - port: 80
     protocol: TCP
-    targetPort: 8080
+    targetPort: 5000
     nodePort: 46667
   selector:
     app: scanflow-tracker
