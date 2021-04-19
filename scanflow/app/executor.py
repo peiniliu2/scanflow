@@ -1,6 +1,6 @@
 
 
-class Node(object):
+class Node():
     """
         Abstract base Node class.
 
@@ -15,14 +15,14 @@ class Executor(Node):
     """
     def __init__(self,
                  name: str = None,
-                 file: str = None,
+                 mainfile: str = None,
                  parameters: dict = None,
                  requirements: str = None,
                  dockerfile: str = None,
                  env: str = None):
 
         super(Executor, self).__init__(name=name)
-        self.file = file
+        self.mainfile = mainfile
         self.parameters = parameters
         self.requirements = requirements
         self.dockerfile = dockerfile

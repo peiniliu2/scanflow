@@ -3,20 +3,24 @@ from mlflow.tracking import MlflowClient
 import logging
 import os
 
-import scanflow.tracker.tracker as tracker
+from scanflow.tracker.tracker import Tracker
+from scanflow.tracker.utils import (
+    get_tracker_uri,
+)
 
-class MlflowTracker(tracker.Tracker):
+class MlflowTracker(Tracker):
 
     def __init__(self,
-                 server_tracker_uri=None,
+                 scanflow_tracker_uri=None,
+                 scanflow_tracker_local_uri=None,
                  verbose=True):
-        super(MlflowTracker, self).__init__(server_tracker_uri,verbose)
+        super(MlflowTracker, self).__init__(scanflow_tracker_uri,scanflow_tracker_local_uri,verbose)
 
-        mlflow.set_tracking_uri(self.server_tracker_uri)
-        logging.info("Scanflow tracking server uri: {}".format(mlflow.get_tracking_uri()))
+
+    def save_app(self, app_name=None, team_name=None, app_dir=None, tolocal=False):
+        mlflow.set_tracking_uri(get_tracker_uri(tolocal))
+        logging.info("Connecting tracking server uri: {}".format(mlflow.get_tracking_uri()))
         self.client = MlflowClient()
-
-    def save_app(self, app_name=None, team_name=None, app_dir=None):
         mlflow.set_experiment(app_name)
         with mlflow.start_run(run_name=team_name):
             # Fetch the artifact uri root directory
@@ -25,7 +29,10 @@ class MlflowTracker(tracker.Tracker):
             mlflow.log_artifacts(app_dir, 
                    artifact_path=f"{app_name}/{team_name}")
 
-    def download_app(self, app_name=None, run_id=None, team_name=None, local_dir=None):
+    def download_app(self, app_name=None, run_id=None, team_name=None, local_dir=None, fromlocal=False):
+        mlflow.set_tracking_uri(get_tracker_uri(fromlocal))
+        logging.info("Connecting tracking server uri: {}".format(mlflow.get_tracking_uri()))
+        self.client = MlflowClient()
         if run_id is not None:
             logging.info(f"[download_app] by 'run_id'. {run_id}")
             self.download_artifacts_by_run_id(run_id,app_name,local_dir)

@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 
 
 from scanflow.agents import Agent
+from scanflow.app import Workflow
 from scanflow.tools.scanflowtools import get_scanflow_paths, check_verbosity
 
 

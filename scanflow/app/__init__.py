@@ -1,4 +1,4 @@
 from .application import Application
 from .workflow import Workflow
-from .dependency import Dependency
-from .executor import Executor
+from .relation import Relation, Dependency
+from .executor import Executor, Node

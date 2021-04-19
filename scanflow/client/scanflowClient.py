@@ -12,15 +12,18 @@ logging.getLogger().setLevel(logging.INFO)
 
 class ScanflowClient:
     def __init__(self,
-                 server_uri="http://scanflow-controller-service.scanflow-system.svc.cluster.local",
+                 scanflow_controller_uri="http://scanflow-controller-service.scanflow-system.svc.cluster.local",
                  verbose=True):
         """
             scanflowClient = ScanflowClient()
-            server_uri=http://172.30.0.50:46666
+            scanflow_controller_uri=http://172.30.0.50:46666
                       =http://scanflow-controller-service.scanflow-system.svc.cluster.local
         """
         self.verbose = verbose
-        self.server_uri = server_uri
+        if scanflow_controller_uri is None:
+            logging.info(f"")
+        else:
+            self.scanflow_controller_uri = scanflow_controller_uri
 
     def get_deploy_backend(self,
                            workflower=None,
