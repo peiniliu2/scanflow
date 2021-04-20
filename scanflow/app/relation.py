@@ -20,14 +20,5 @@ class Relation(Dependency):
 
         super(Relation, self).__init__(depender=depender,
                                        dependee=dependee)
-        self.pritority = priority
+        self.priority = priority
                     
-        self._to_dict = locals()
-    
-    @property
-    def to_dict(self):
-        tmp_dict = self._to_dict
-        tmp_dict.pop('self', None)
-        tmp_dict.pop('__class__', None)
-        tmp_dict = {k: v for k, v in tmp_dict.items() if v is not None}
-        return tmp_dict

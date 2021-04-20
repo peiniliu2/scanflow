@@ -14,24 +14,21 @@ class Workflow(object):
         self.executors = executors
         self.relations = relations
 
-        self._to_dict = locals()
-
-    @property
     def to_dict(self):
-        tmp_dict = self._to_dict
-        tmp_dict.pop('self', None)
-        tmp_dict = {k: v for k, v in tmp_dict.items() if v is not None}
-        executors_list = list()
-        relation_list = list()
-        for k, v in tmp_dict.items():
+        tmp_dict = {}
+        workflow_dict = self.__dict__
+        for k,v in workflow_dict.items():
             if k == 'executors':
+                executors_list = list()
                 for executor in v:
-                    executors_list.append(executor.to_dict)
-            if k == 'relations':
+                    executors_list.append(executor.__dict__)
+                tmp_dict['executors'] = executors_list
+            elif k == 'relations':
+                relations_list = list()
                 for relation in v:
-                    relation_list.append(relation.to_dict)
-
-        tmp_dict['executors'] = executors_list
-        tmp_dict['relations'] = relation_list
-
+                    relations_list.append(relation.__dict__)
+                tmp_dict['relations'] = relations_list
+            else:
+                tmp_dict[k] = v
         return tmp_dict
+            

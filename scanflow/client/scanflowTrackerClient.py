@@ -51,9 +51,5 @@ class ScanflowTrackerClient:
         if app_name is None:
             logging.info(f"must provide app_name {app_name} ")
             return
-            
-        if local_dir is None:
-            logging.info(f"must provide local_dir {local_dir}")
-            return
 
         self.tracker.download_app(app_name, run_id, team_name, local_dir, fromlocal)
