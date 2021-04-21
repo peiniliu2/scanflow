@@ -1,18 +1,18 @@
 from typing import List, Dict
 
 from scanflow.app import Executor
-from scanflow.app import Relation
+from scanflow.app import Dependency
 
 
 class Workflow(object):
     def __init__(self,
                  name: str = None,
                  executors: List[Executor] = None,
-                 relations: List[Relation] = None):
+                 dependencies: List[Dependency] = None):
 
         self.name = name
         self.executors = executors
-        self.relations = relations
+        self.dependencies = dependencies
 
     def to_dict(self):
         tmp_dict = {}
@@ -22,12 +22,12 @@ class Workflow(object):
                 executors_list = list()
                 for executor in v:
                     executors_list.append(executor.__dict__)
-                tmp_dict['executors'] = executors_list
-            elif k == 'relations':
-                relations_list = list()
-                for relation in v:
-                    relations_list.append(relation.__dict__)
-                tmp_dict['relations'] = relations_list
+                tmp_dict[k] = executors_list
+            elif k == 'dependencies':
+                dependencies_list = list()
+                for dependency in v:
+                    dependencies_list.append(dependency.__dict__)
+                tmp_dict[k] = dependencies_list
             else:
                 tmp_dict[k] = v
         return tmp_dict

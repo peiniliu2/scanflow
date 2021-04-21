@@ -20,6 +20,8 @@ class Kubernetes:
         else:
             config.load_kube_config()
 
+        config.load_incluster_config()
+
 
     def create_namespace(self, namespace):
         namespacebody = client.V1Namespace(

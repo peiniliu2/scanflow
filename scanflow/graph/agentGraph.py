@@ -1,10 +1,8 @@
-import networkx as nx
+from scanflow.agent import Agent
 
-from scanflow.app import Application
-
-class Graph:
+class AgentGraph:
     def __init__(self,
-                 scanflowapp: Application = None):
+                 scanflowapp: Agent = None):
     
         self.app = scanflowapp
         self.graph = self.generate_graph()
